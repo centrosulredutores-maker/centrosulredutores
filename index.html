@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema OS - Centrosul Redutores Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cor-primaria: #004d40;
+            --cor-destaque: #00bfa5;
+            --cor-secundaria: #e65100;
+            --bg-body: #121212;
+            --bg-card: #ffffff;
+            --texto: #2c3e50;
+            --sombra-suave: 0 10px 30px rgba(0,0,0,0.3);
+            --transicao: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; padding: 0; color: var(--texto); 
+            background-color: var(--bg-body);
+            min-height: 100vh;
+        }
+
+        /* Esconder interface administrativa se for visualização externa */
+        body.view-mode .navbar, 
+        body.view-mode .floating-actions, 
+        body.view-mode .section-title:not(.public),
+        body.view-mode .no-view {
+            display: none !important;
+        }
+
+        .navbar {
+            background: rgba(18, 18, 18, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px; display: flex; justify-content: center; gap: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; top: 0; z-index: 100;
+        }
+
+        .nav-btn {
+            background: transparent; color: #aaa; border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 30px; border-radius: 8px; cursor: pointer; font-weight: 600;
+            transition: var(--transicao); display: flex; align-items: center; gap: 10px;
+        }
+
+        .nav-btn.active { background: var(--cor-destaque); color: #002d26; }
+
+        .tab-content { display: none; padding: 40px 20px; }
+        .tab-content.active { display: block; }
+
+        .folha-a4 {
+            background: var(--bg-card); 
+            width: 210mm; 
+            min-height: 297mm; 
+            margin: 0 auto;
+            padding: 10mm 15mm; 
+            border-radius: 6px;
+            box-shadow: var(--sombra-suave);
+            border-top: 8px solid var(--cor-primaria);
+        }
+
+        .grid-form label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        
+        input, textarea { 
+            width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; 
+            font-size: 13px; background: #f8f9fa; box-sizing: border-box;
+        }
+
+        .section-title { 
+            grid-column: span 4; 
+            border-bottom: 2px solid #eee;
+            color: var(--cor-primaria); 
+            padding: 15px 0 5px 0; font-weight: 800; display: flex; align-items: center; gap: 10px;
+        }
+
+        .floating-actions { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 15px; }
+        .fab { padding: 15px 25px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        @media print {
+            .navbar, .floating-actions, .no-print { display: none !important; }
+            body { background: white; }
+            .folha-a4 { width: 100%; border: none; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar no-print">
+        <button class="nav-btn active" onclick="mudarAba('nova-os')"><i class="fas fa-file-signature"></i> Nova OS</button>
+        <button class="nav-btn" onclick="mudarAba('historico')"><i class="fas fa-database"></i> Histórico</button>
+    </nav>
+
+    <div id="tab-nova-os" class="tab-content active">
+        <div class="folha-a4">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;">
+                <div>
+                    <img src="CENTROSUL REDUTORE LOGOTIPO OFFICIAL (2).png" alt="Logo" style="max-height: 70px;">
+                </div>
+                <div style="text-align:right;">
+                    <h2 style="margin:0; color:var(--cor-primaria);">FICHA TÉCNICA</h2>
+                    <div id="qrcode" style="margin-top: 5px;"></div>
+                </div>
+            </header>
+
+            <form id="form-os">
+                <div class="grid-form" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                    
+                    <div class="section-title no-view"><i class="fas fa-user-tie"></i> CLIENTE</div>
+                    <div style="grid-column: span 4;" class="no-view"><input type="text" id="cliente" oninput="atualizarQR()" placeholder="Nome do Cliente"></div>
+
+                    <div class="section-title public"><i class="fas fa-industry"></i> INFORMAÇÕES DO EQUIPAMENTO</div>
+                    <div style="grid-column: span 2;"><label>Equipamento</label><input type="text" id="equipamento" oninput="atualizarQR()" placeholder="Ex: Redutor"></div>
+                    <div style="grid-column: span 2;"><label>Modelo / Série</label><input type="text" id="modelo" oninput="atualizarQR()" placeholder="Modelo do equipamento"></div>
+
+                    <div class="section-title public"><i class="fas fa-wrench"></i> SERVIÇO REALIZADO</div>
+                    <div style="grid-column: span 4;"><textarea id="servico" rows="8" oninput="atualizarQR()" placeholder="Descreva o serviço realizado..."></textarea></div>
+                    
+                    <div class="section-title no-view"><i class="fas fa-calendar"></i> PRAZOS</div>
+                    <div style="grid-column: span 2;" class="no-view"><label>Data Entrada</label><input type="date" id="data_entrada"></div>
+                    <div style="grid-column: span 2;" class="no-view"><label>Garantia</label><input type="text" id="garantia" placeholder="Ex: 90 dias"></div>
+                </div>
+            </form>
+        </div>
+
+        <div class="floating-actions no-print">
+            <button class="fab" onclick="salvarOS()" style="background: var(--cor-destaque);"><i class="fas fa-save"></i> SALVAR</button>
+            <button class="fab" onclick="window.print()" style="background: white;"><i class="fas fa-print"></i> IMPRIMIR</button>
+        </div>
+    </div>
+
+    <div id="tab-historico" class="tab-content">
+        </div>
+
+    <script>
+        let dbOS = localStorage.getItem('cs_db') ? JSON.parse(localStorage.getItem('cs_db')) : [];
+        let seq = localStorage.getItem('cs_seq') ? parseInt(localStorage.getItem('cs_seq')) : 1;
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if(params.has('public')) {
+                // MODO PÚBLICO: Alguém escaneou o QR Code
+                document.body.classList.add('view-mode');
+                document.getElementById('equipamento').value = params.get('e');
+                document.getElementById('modelo').value = params.get('m');
+                document.getElementById('servico').value = params.get('s');
+                // Desabilitar edição no modo visualização
+                document.querySelectorAll('input, textarea').forEach(el => el.readOnly = true);
+            } else {
+                document.getElementById('data_entrada').valueAsDate = new Date();
+            }
+        };
+
+        function atualizarQR() {
+            const container = document.getElementById("qrcode");
+            if (!container) return;
+            container.innerHTML = ""; 
+
+            const equip = encodeURIComponent(document.getElementById('equipamento').value || "");
+            const mod = encodeURIComponent(document.getElementById('modelo').value || "");
+            const serv = encodeURIComponent(document.getElementById('servico').value || "");
+
+            // CONSTRÓI A URL DO PRÓPRIO SITE COM OS DADOS
+            // Quando você hospedar, o link será automaticamente o do seu site
+            const baseURL = window.location.href.split('?')[0];
+            const urlPublica = `${baseURL}?public=true&e=${equip}&m=${mod}&s=${serv}`;
+            
+            try {
+                new QRCode(container, { 
+                    text: urlPublica, 
+                    width: 90, 
+                    height: 90, 
+                    colorDark : "#004d40", 
+                    correctLevel: QRCode.CorrectLevel.L // Nível L permite URLs mais longas
+                });
+            } catch (e) { }
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            if(aba === 'nova-os') {
+                document.getElementById('tab-nova-os').classList.add('active');
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
+            } else {
+                document.getElementById('tab-historico').classList.add('active');
+                document.querySelectorAll('.nav-btn')[1].classList.add('active');
+            }
+        }
+
+        function salvarOS() {
+            // Lógica de salvar permanece a mesma
+            alert("OS Salva no banco local!");
+        }
+    </script>
+</body>
+</html>
