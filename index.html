@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrosul Redutores | Sistema Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00bfa5;
+            --primary-dark: #00796b;
+            --bg-dark: #0f172a;
+            --card-dark: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #f59e0b;
+            --white: #ffffff;
+            --shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        /* --- ESTILOS GERAIS --- */
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0; padding: 0; 
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Modo de Visualização Pública (QR Code) */
+        body.view-mode .no-view { display: none !important; }
+        body.view-mode .folha-a4 { margin-top: 20px; box-shadow: none; }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 1rem 2rem;
+            display: flex; justify-content: center; gap: 15px;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-btn {
+            background: transparent; color: var(--text-dim); border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 20px; border-radius: 12px; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 600; display: flex; align-items: center; gap: 8px;
+        }
+
+        .nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--white); }
+        .nav-btn.active { background: var(--primary); color: var(--bg-dark); border-color: var(--primary); }
+
+        /* --- CONTEÚDO --- */
+        .tab-content { display: none; padding: 40px 20px; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- FOLHA A4 (LAYOUT DA OS) --- */
+        .folha-a4 {
+            background: var(--white);
+            color: #1e293b;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 15mm;
+            box-sizing: border-box;
+            box-shadow: var(--shadow);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .os-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 3px solid var(--primary-dark);
+            padding-bottom: 20px; margin-bottom: 30px;
+        }
+
+        .section-title {
+            background: #f1f5f9;
+            color: var(--primary-dark);
+            padding: 8px 15px;
+            font-size: 13px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 1px;
+            margin: 25px 0 15px 0; border-radius: 4px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* --- CAMPOS DE FORMULÁRIO --- */
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .col-2 { grid-column: span 2; }
+        .col-4 { grid-column: span 4; }
+
+        label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input, textarea {
+            width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;
+            font-size: 14px; background: #f8fafc; color: #1e293b; box-sizing: border-box;
+        }
+
+        /* --- HISTÓRICO --- */
+        .search-box {
+            max-width: 800px; margin: 0 auto 30px auto;
+            position: relative;
+        }
+        .search-box input {
+            padding: 15px 20px 15px 50px; background: var(--card-dark);
+            border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 15px;
+        }
+        .search-box i { position: absolute; left: 20px; top: 18px; color: var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; background: var(--card-dark); border-radius: 12px; overflow: hidden; }
+        th { background: rgba(255,255,255,0.05); padding: 15px; text-align: left; color: var(--primary); font-size: 12px; }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+
+        /* --- BOTÕES FLUTUANTES --- */
+        .actions { position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .fab {
+            padding: 15px 25px; border-radius: 12px; border: none; cursor: pointer;
+            font-weight: bold; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+        }
+        .fab:hover { transform: scale(1.05); }
+
+        /* --- AJUSTES DE IMPRESSÃO --- */
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white !important; }
+            .navbar, .actions, .no-print, .search-box { display: none !important; }
+            .folha-a4 { 
+                width: 210mm; height: 297mm;
+                margin: 0 !important; border: none !important; box-shadow: none !important;
+                padding: 10mm !important;
+                position: absolute; left: 0; top: 0;
+            }
+            input, textarea { border: none !important; background: transparent !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar no-print">
+        <button class="nav-btn active" onclick="mudarAba('nova-os')"><i class="fas fa-plus"></i> Nova OS</button>
+        <button class="nav-btn" onclick="mudarAba('historico')"><i class="fas fa-list"></i> Histórico de Serviços</button>
+    </nav>
+
+    <div id="tab-nova-os" class="tab-content active">
+        <div class="folha-a4">
+            <div class="os-header">
+                <img src="https://via.placeholder.com/180x60?text=CENTROSUL+LOGOTIPO" alt="Centrosul" style="max-height: 65px;">
+                <div style="text-align: right;">
+                    <h1 style="margin:0; font-size: 20px; color: var(--primary-dark);">ORDEM DE SERVIÇO</h1>
+                    <div id="qrcode" style="margin-top: 10px; display: inline-block;"></div>
+                </div>
+            </div>
+
+            <form id="form-os">
+                <div class="grid">
+                    <div class="section-title col-4 no-view"><i class="fas fa-user"></i> Dados do Cliente</div>
+                    <div class="col-2 no-view"><label>Cliente / Razão Social</label><input type="text" id="cliente" oninput="atualizarQR()"></div>
+                    <div class="col-2 no-view"><label>CNPJ / CPF</label><input type="text" id="cnpj" oninput="atualizarQR()"></div>
+
+                    <div class="section-title col-4"><i class="fas fa-cog"></i> Detalhes do Equipamento</div>
+                    <div class="col-2"><label>Equipamento</label><input type="text" id="equipamento" oninput="atualizarQR()"></div>
+                    <div class="col-2"><label>Modelo / Nº Série</label><input type="text" id="modelo" oninput="atualizarQR()"></div>
+
+                    <div class="section-title col-4"><i class="fas fa-tools"></i> Laudo Técnico e Serviço</div>
+                    <div class="col-4"><label>Descrição dos Serviços Realizados e Peças</label>
+                        <textarea id="servico" rows="10" oninput="atualizarQR()"></textarea>
+                    </div>
+
+                    <div class="section-title col-4 no-view"><i class="fas fa-info-circle"></i> Encerramento</div>
+                    <div class="col-2 no-view"><label>Técnico Responsável</label><input type="text" id="tecnico"></div>
+                    <div class="col-2 no-view"><label>Garantia</label><input type="text" id="garantia" placeholder="Ex: 90 dias"></div>
+                </div>
+            </form>
+
+            <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; color: #94a3b8;" class="no-view">
+                <div style="border-top: 1px solid #cbd5e1; width: 45%; text-align: center; padding-top: 5px;">Assinatura Centrosul</div>
+                <div style="border-top: 1px solid #cbd5e1; width: 45%; text-align: center; padding-top: 5px;">Assinatura Cliente</div>
+            </div>
+        </div>
+
+        <div class="actions no-print">
+            <button class="fab" onclick="salvarOS()" style="background: var(--primary); color: var(--bg-dark);"><i class="fas fa-save"></i> SALVAR OS</button>
+            <button class="fab" onclick="window.print()" style="background: white; color: var(--bg-dark);"><i class="fas fa-print"></i> IMPRIMIR</button>
+        </div>
+    </div>
+
+    <div id="tab-historico" class="tab-content">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="inputBusca" placeholder="Buscar por Cliente, CNPJ ou Equipamento..." onkeyup="filtrarHistorico()">
+        </div>
+        
+        <div style="max-width: 1000px; margin: 0 auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>CLIENTE</th>
+                        <th>CNPJ</th>
+                        <th>EQUIPAMENTO</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-os"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let dbOS = localStorage.getItem('cs_db') ? JSON.parse(localStorage.getItem('cs_db')) : [];
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if(params.has('public')) {
+                document.body.classList.add('view-mode');
+                document.getElementById('equipamento').value = params.get('e');
+                document.getElementById('modelo').value = params.get('m');
+                document.getElementById('servico').value = params.get('s');
+                document.querySelectorAll('input, textarea').forEach(el => el.readOnly = true);
+            }
+        };
+
+        function atualizarQR() {
+            const container = document.getElementById("qrcode");
+            if (!container) return;
+            container.innerHTML = ""; 
+
+            const e = encodeURIComponent(document.getElementById('equipamento').value || "");
+            const m = encodeURIComponent(document.getElementById('modelo').value || "");
+            const s = encodeURIComponent(document.getElementById('servico').value || "");
+
+            // Gera URL dinâmica baseada no local atual
+            const urlPublica = `${window.location.origin}${window.location.pathname}?public=true&e=${e}&m=${m}&s=${s}`;
+            
+            new QRCode(container, { text: urlPublica, width: 80, height: 80, colorDark : "#00796b" });
+        }
+
+        function salvarOS() {
+            const novaOS = {
+                id: Date.now(),
+                cliente: document.getElementById('cliente').value,
+                cnpj: document.getElementById('cnpj').value,
+                equipamento: document.getElementById('equipamento').value,
+                modelo: document.getElementById('modelo').value,
+                servico: document.getElementById('servico').value
+            };
+
+            if(!novaOS.cliente) return alert("Por favor, preencha o nome do cliente.");
+            
+            dbOS.push(novaOS);
+            localStorage.setItem('cs_db', JSON.stringify(dbOS));
+            alert("Ordem de Serviço salva no histórico!");
+            document.getElementById('form-os').reset();
+            atualizarQR();
+        }
+
+        function filtrarHistorico() {
+            const termo = document.getElementById('inputBusca').value.toLowerCase();
+            const filtrados = dbOS.filter(os => 
+                os.cliente.toLowerCase().includes(termo) || 
+                os.cnpj.toLowerCase().includes(termo) ||
+                os.equipamento.toLowerCase().includes(termo)
+            );
+            renderizarTabela(filtrados);
+        }
+
+        function renderizarTabela(dados = dbOS) {
+            const tbody = document.getElementById('lista-os');
+            tbody.innerHTML = dados.map(os => `
+                <tr>
+                    <td>${os.cliente}</td>
+                    <td>${os.cnpj}</td>
+                    <td>${os.equipamento}</td>
+                    <td>
+                        <button onclick="carregarOS(${os.id})" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-eye"></i></button>
+                        <button onclick="excluirOS(${os.id})" style="background:none; border:none; color:var(--accent); cursor:pointer; margin-left:10px;"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function carregarOS(id) {
+            const os = dbOS.find(x => x.id === id);
+            document.getElementById('cliente').value = os.cliente;
+            document.getElementById('cnpj').value = os.cnpj;
+            document.getElementById('equipamento').value = os.equipamento;
+            document.getElementById('modelo').value = os.modelo;
+            document.getElementById('servico').value = os.servico;
+            mudarAba('nova-os');
+            atualizarQR();
+        }
+
+        function excluirOS(id) {
+            if(confirm("Deseja excluir este registro?")) {
+                dbOS = dbOS.filter(x => x.id !== id);
+                localStorage.setItem('cs_db', JSON.stringify(dbOS));
+                filtrarHistorico();
+            }
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + aba).classList.add('active');
+            document.querySelector(`[onclick="mudarAba('${aba}')"]`).classList.add('active');
+            if(aba === 'historico') filtrarHistorico();
+        }
+    </script>
+</body>
+</html>
