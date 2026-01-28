@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrosul Redutores | Gestão Profissional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- VARIÁVEIS E RESET --- */
+        :root {
+            /* Paleta de Cores Modernizada (Emerald & Slate) */
+            --primary: #059669;       
+            --primary-hover: #047857;
+            --secondary: #1e293b;     
+            --secondary-hover: #0f172a;
+            
+            --bg-body: #f8fafc;       
+            --bg-paper: #ffffff;
+            
+            --text-main: #334155;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            
+            --border-color: #e2e8f0;
+            --focus-ring: rgba(5, 150, 105, 0.2);
+            
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body { 
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0; 
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 80px; 
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            background: var(--secondary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0; z-index: 1000;
+            box-shadow: var(--shadow-md);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-brand { 
+            color: white; 
+            font-weight: 800; 
+            font-size: 1.25rem; 
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-brand i { color: #34d399; }
+
+        .nav-links { display: flex; gap: 12px; }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.08);
+            color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+        .nav-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+            box-shadow: 0 0 15px rgba(5, 150, 105, 0.4);
+        }
+
+        /* --- LAYOUT GERAL --- */
+        .tab-content { display: none; padding: 40px 20px; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- FOLHA A4 (OS) --- */
+        .folha-a4 {
+            background: var(--bg-paper);
+            max-width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 15mm 20mm;
+            border-radius: var(--radius-sm); 
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .os-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 30px;
+            margin-bottom: 35px;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            height: 100px;
+        }
+        .logo-img { max-height: 100%; max-width: 250px; object-fit: contain; }
+
+        .os-info-box { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+        
+        .os-title { 
+            margin: 0 0 10px 0; 
+            color: var(--secondary); 
+            font-size: 28px; 
+            font-weight: 900; 
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+        
+        .os-number-wrapper {
+            background: var(--secondary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .os-number-wrapper span { opacity: 0.7; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .os-number-input {
+            background: transparent !important; border: none !important;
+            color: white !important; font-size: 20px; font-weight: 800;
+            width: 90px; padding: 0; margin: 0; text-align: right;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        #qrcode {
+            margin-top: 15px;
+            padding: 5px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+        }
+
+        .section-header {
+            background: #f1f5f9;
+            border-left: 5px solid var(--primary);
+            padding: 10px 18px;
+            margin: 30px 0 20px 0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--secondary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; }
+        .col-2 { grid-column: span 2; }
+        .col-4 { grid-column: span 4; }
+
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: var(--text-light); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            margin-left: 2px;
+        }
+        
+        input, textarea { 
+            background: #fff;
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-sm); 
+            padding: 14px; 
+            font-size: 14px; 
+            color: var(--text-dark);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        textarea { resize: vertical; line-height: 1.6; }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        input[readonly], textarea[readonly] { 
+            background: transparent; 
+            border: none; 
+            border-bottom: 2px solid #e2e8f0; 
+            border-radius: 0;
+            padding-left: 0;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        /* --- HISTÓRICO E BUSCA --- */
+        .history-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .history-card { 
+            background: white; 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-lg); 
+            overflow: hidden; 
+            border: 1px solid var(--border-color);
+        }
+        
+        .history-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .history-title {
+            margin: 0; 
+            font-size: 18px; 
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        /* Estilo da Caixa de Busca */
+        .search-wrapper {
+            position: relative;
+            max-width: 350px;
+            width: 100%;
+        }
+        
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        #busca-historico {
+            padding: 10px 10px 10px 38px; /* Espaço para o ícone */
+            height: 42px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: white;
+        }
+        
+        #busca-historico:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        
+        th { 
+            background: #fff; 
+            padding: 18px 25px; 
+            text-align: left; 
+            font-size: 12px; 
+            font-weight: 700;
+            color: var(--text-light); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            border-bottom: 2px solid #f1f5f9; 
+        }
+        
+        td { 
+            padding: 18px 25px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 14px; 
+            color: var(--text-main);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8fafc; }
+
+        .btn-action {
+            width: 38px; height: 38px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color);
+            background: white; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            color: var(--text-light);
+            box-shadow: var(--shadow-sm);
+            margin-left: 5px;
+        }
+        
+        .btn-action:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .btn-action.edit:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+        .btn-action.delete:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+        /* --- BOTÕES FLUTUANTES (ACTIONS) --- */
+        .actions { 
+            position: fixed; 
+            bottom: 30px; 
+            right: 30px; 
+            display: flex; 
+            flex-direction: column;
+            gap: 15px; 
+            z-index: 500;
+        }
+        
+        .btn-fab { 
+            padding: 0;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: none; 
+            cursor: pointer; 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        
+        .btn-fab::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            right: 70px;
+            background: #1e293b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        
+        .btn-fab:hover { transform: scale(1.1); }
+        .btn-fab:hover::after { opacity: 1; transform: translateX(-5px); }
+
+        .btn-save { background: var(--primary); color: white; }
+        .btn-print { background: var(--secondary); color: white; }
+
+        /* --- MODO VISUALIZAÇÃO PÚBLICA --- */
+        body.view-mode { background-color: #fff; padding: 0; }
+        body.view-mode .navbar, 
+        body.view-mode .actions,
+        body.view-mode .no-view-public,
+        body.view-mode #tab-historico { display: none !important; }
+        
+        body.view-mode .folha-a4 {
+            box-shadow: none; border: none; margin: 0;
+        }
+
+        /* --- MODO IMPRESSÃO --- */
+        @media print {
+            @page { margin: 0; size: auto; }
+            body { background: white; -webkit-print-color-adjust: exact; padding: 0; }
+            .navbar, .actions, .no-print { display: none !important; }
+            
+            .folha-a4 { 
+                box-shadow: none; 
+                border: none; 
+                width: 100%; 
+                margin: 0; 
+                padding: 10mm 15mm; 
+                max-width: none;
+                min-height: auto;
+            }
+            
+            .os-header { border-bottom: 2px solid #000; padding-bottom: 20px; }
+            .section-header { 
+                border-left: 4px solid #000; 
+                background: #f0f0f0; 
+                color: #000;
+                print-color-adjust: exact;
+            }
+            
+            input, textarea { border: 1px solid #ccc; font-size: 12px; }
+            .os-number-wrapper { background: #000; color: white; border: 1px solid #000; }
+            .grid { gap: 15px; }
+            label { color: #000; }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .navbar { padding: 0.75rem 1rem; flex-direction: column; gap: 10px; }
+            .nav-links { width: 100%; justify-content: center; }
+            .folha-a4 { padding: 20px; width: 100%; }
+            .grid { display: flex; flex-direction: column; gap: 15px; }
+            .col-2, .col-4 { width: 100%; }
+            .os-header { flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+            .os-info-box { align-items: center; width: 100%; }
+            .actions { bottom: 20px; right: 20px; }
+            
+            /* Ajuste busca mobile */
+            .history-header { flex-direction: column; align-items: stretch; gap: 15px; }
+            .search-wrapper { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar no-print">
+        <div class="nav-brand">
+            <i class="fas fa-cube"></i>
+            <div>CENTROSUL <span style="font-weight:300; opacity: 0.8;">GESTOR</span></div>
+        </div>
+        <div class="nav-links">
+            <button id="btn-nova-os" class="nav-btn active" onclick="limparEIrParaNovaOS()">
+                <i class="fas fa-plus-circle" style="margin-right:5px"></i> Nova Ordem
+            </button>
+            <button id="btn-historico" class="nav-btn" onclick="mudarAba('historico')">
+                <i class="fas fa-history" style="margin-right:5px"></i> Histórico
+            </button>
+        </div>
+    </nav>
+
+    <div id="tab-nova-os" class="tab-content active">
+        <div class="folha-a4">
+            <div class="os-header">
+                <div class="logo-box">
+                    <img src="logo.png" alt="Logo Centrosul" class="logo-img" 
+                         onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-size:32px; font-weight:800; color:var(--secondary); line-height:1\'>CENTROSUL<br><span style=\'color:var(--primary)\'>REDUTORES</span></div>'">
+                </div>
+                <div class="os-info-box">
+                    <h1 class="os-title">ORDEM DE SERVIÇO</h1>
+                    <div class="os-number-wrapper">
+                        <span>Nº</span>
+                        <input type="number" id="os_num" class="os-number-input" oninput="atualizarQR()" placeholder="0000">
+                    </div>
+                    <div id="qrcode" class="no-view-public"></div>
+                </div>
+            </div>
+
+            <form id="form-os">
+                <div class="section-header">
+                    <i class="fas fa-user-tie" style="margin-right:8px; opacity:0.7"></i> Identificação do Cliente
+                </div>
+                <div class="grid">
+                    <div class="field-group col-2">
+                        <label>Cliente / Razão Social</label>
+                        <input type="text" id="cliente" oninput="atualizarQR()" placeholder="Nome do cliente">
+                    </div>
+                    <div class="field-group col-2">
+                        <label>CNPJ / CPF</label>
+                        <input type="text" id="cnpj" oninput="atualizarQR()" placeholder="00.000.000/0000-00">
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <i class="fas fa-cogs" style="margin-right:8px; opacity:0.7"></i> Detalhes do Equipamento
+                </div>
+                <div class="grid">
+                    <div class="field-group col-2">
+                        <label>Equipamento</label>
+                        <input type="text" id="equipamento" oninput="atualizarQR()" placeholder="Ex: Redutor de Velocidade">
+                    </div>
+                    <div class="field-group col-2">
+                        <label>Modelo / Nº Série</label>
+                        <input type="text" id="modelo" oninput="atualizarQR()" placeholder="Ex: X200-Series / SN 123456">
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <i class="fas fa-clipboard-list" style="margin-right:8px; opacity:0.7"></i> Laudo Técnico
+                </div>
+                <div class="grid">
+                    <div class="field-group col-4">
+                        <label>Descrição do Serviço / Defeitos / Soluções</label>
+                        <textarea id="servico" rows="10" oninput="atualizarQR()" placeholder="Descreva detalhadamente o serviço realizado..."></textarea>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <i class="fas fa-calendar-alt" style="margin-right:8px; opacity:0.7"></i> Cronograma
+                </div>
+                <div class="grid">
+                    <div class="field-group col-2">
+                        <label>Data de Entrada</label>
+                        <input type="date" id="data_entrada" oninput="atualizarQR()">
+                    </div>
+                    <div class="field-group col-2">
+                        <label>Previsão de Saída</label>
+                        <input type="date" id="data_saida" oninput="atualizarQR()">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="actions no-print">
+            <button class="btn-fab btn-save" onclick="salvarOS()" data-tooltip="Salvar OS">
+                <i class="fas fa-save"></i>
+            </button>
+            <button class="btn-fab btn-print" onclick="window.print()" data-tooltip="Imprimir">
+                <i class="fas fa-print"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="tab-historico" class="tab-content">
+        <div class="history-container">
+            <div class="history-card">
+                <div class="history-header">
+                    <h2 class="history-title"><i class="fas fa-list" style="color:var(--primary); margin-right:10px"></i> Histórico de Ordens</h2>
+                    <div class="search-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="busca-historico" onkeyup="filtrarHistorico()" placeholder="Buscar por OS, Cliente ou CNPJ...">
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="10%">Nº OS</th>
+                            <th width="40%">Cliente</th>
+                            <th width="20%">Equipamento</th>
+                            <th width="15%">Saída</th>
+                            <th width="15%" style="text-align: center;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-os"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dbOS = JSON.parse(localStorage.getItem('cs_db') || '[]');
+        let proxCodigo = parseInt(localStorage.getItem('cs_seq') || '1');
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if(params.has('public')) {
+                document.body.classList.add('view-mode');
+                document.getElementById('os_num').value = params.get('id');
+                document.getElementById('cliente').value = params.get('c');
+                document.getElementById('cnpj').value = params.get('cp');
+                document.getElementById('equipamento').value = params.get('e');
+                document.getElementById('modelo').value = params.get('m');
+                document.getElementById('servico').value = params.get('s');
+                document.getElementById('data_entrada').value = params.get('de');
+                document.getElementById('data_saida').value = params.get('ds');
+                document.querySelectorAll('input, textarea').forEach(el => el.readOnly = true);
+            } else {
+                document.getElementById('os_num').value = proxCodigo;
+                document.getElementById('data_entrada').valueAsDate = new Date();
+                atualizarQR();
+            }
+        };
+
+        function atualizarQR() {
+            const container = document.getElementById("qrcode");
+            if(!container) return;
+            container.innerHTML = ""; 
+            
+            const id = encodeURIComponent(document.getElementById('os_num').value || "");
+            const c = encodeURIComponent(document.getElementById('cliente').value || "");
+            const cp = encodeURIComponent(document.getElementById('cnpj').value || "");
+            const e = encodeURIComponent(document.getElementById('equipamento').value || "");
+            const m = encodeURIComponent(document.getElementById('modelo').value || "");
+            const s = encodeURIComponent(document.getElementById('servico').value || "");
+            const de = encodeURIComponent(document.getElementById('data_entrada').value || "");
+            const ds = encodeURIComponent(document.getElementById('data_saida').value || "");
+
+            const url = `${window.location.origin}${window.location.pathname}?public=true&id=${id}&c=${c}&cp=${cp}&e=${e}&m=${m}&s=${s}&de=${de}&ds=${ds}`;
+            new QRCode(container, { text: url, width: 80, height: 80, colorDark: "#1e293b" });
+        }
+
+        function salvarOS() {
+            const num = parseInt(document.getElementById('os_num').value);
+            const cliente = document.getElementById('cliente').value;
+            if(!cliente || isNaN(num)) return alert("Preencha o número e o cliente.");
+
+            const os = {
+                id: num,
+                cliente: cliente,
+                cnpj: document.getElementById('cnpj').value,
+                equipamento: document.getElementById('equipamento').value,
+                modelo: document.getElementById('modelo').value,
+                servico: document.getElementById('servico').value,
+                data_entrada: document.getElementById('data_entrada').value,
+                data_saida: document.getElementById('data_saida').value
+            };
+
+            const index = dbOS.findIndex(x => x.id === num);
+            if(index !== -1) {
+                dbOS[index] = os;
+            } else {
+                dbOS.push(os);
+                if(num >= proxCodigo) proxCodigo = num + 1;
+                localStorage.setItem('cs_seq', proxCodigo);
+            }
+
+            localStorage.setItem('cs_db', JSON.stringify(dbOS));
+            alert("Ordem de Serviço salva com sucesso!");
+            renderizarTabela(); // Atualiza a tabela com todos os dados
+            limparEIrParaNovaOS();
+        }
+
+        // Função Modificada para aceitar dados filtrados
+        function renderizarTabela(dados = dbOS) {
+            const tbody = document.getElementById('lista-os');
+            
+            if (dados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-light);">Nenhuma OS encontrada.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dados.slice().reverse().map(os => `
+                <tr>
+                    <td style="font-weight: 700; color: var(--primary);">#${os.id.toString().padStart(4, '0')}</td>
+                    <td style="font-weight: 600;">${os.cliente}</td>
+                    <td style="color: var(--text-light);">${os.equipamento || '-'}</td>
+                    <td>${os.data_saida ? os.data_saida.split('-').reverse().join('/') : '<span style="color:#cbd5e1">--/--/--</span>'}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-action edit" onclick="carregarOS(${os.id})" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button class="btn-action delete" onclick="excluirOS(${os.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Nova Função de Busca
+        function filtrarHistorico() {
+            const termo = document.getElementById('busca-historico').value.toLowerCase();
+            
+            if (!termo) {
+                renderizarTabela(dbOS);
+                return;
+            }
+
+            const filtrados = dbOS.filter(os => {
+                const idMatch = os.id.toString().includes(termo);
+                const clienteMatch = os.cliente.toLowerCase().includes(termo);
+                const cnpjMatch = os.cnpj && os.cnpj.toLowerCase().includes(termo);
+                return idMatch || clienteMatch || cnpjMatch;
+            });
+
+            renderizarTabela(filtrados);
+        }
+
+        function carregarOS(id) {
+            const os = dbOS.find(x => x.id === id);
+            document.getElementById('os_num').value = os.id;
+            document.getElementById('cliente').value = os.cliente;
+            document.getElementById('cnpj').value = os.cnpj;
+            document.getElementById('equipamento').value = os.equipamento;
+            document.getElementById('modelo').value = os.modelo;
+            document.getElementById('servico').value = os.servico;
+            document.getElementById('data_entrada').value = os.data_entrada;
+            document.getElementById('data_saida').value = os.data_saida;
+            mudarAba('nova-os');
+            atualizarQR();
+        }
+
+        function excluirOS(id) {
+            if(confirm("Tem certeza que deseja excluir a OS #" + id + "?")) {
+                dbOS = dbOS.filter(x => x.id !== id);
+                localStorage.setItem('cs_db', JSON.stringify(dbOS));
+                filtrarHistorico(); // Usa a função de filtro para manter a busca ativa se houver
+            }
+        }
+
+        function limparEIrParaNovaOS() {
+            document.getElementById('form-os').reset();
+            document.getElementById('os_num').value = proxCodigo;
+            document.getElementById('data_entrada').valueAsDate = new Date();
+            mudarAba('nova-os');
+            atualizarQR();
+        }
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('tab-' + aba).classList.add('active');
+            
+            if(aba === 'nova-os') document.getElementById('btn-nova-os').classList.add('active');
+            if(aba === 'historico') {
+                document.getElementById('btn-historico').classList.add('active');
+                // Limpa a busca ao entrar na aba
+                document.getElementById('busca-historico').value = '';
+                renderizarTabela(dbOS);
+            }
+        }
+    </script>
+</body>
+</html>
