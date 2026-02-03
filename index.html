@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrosul | Gestão e Consulta de OS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00dc82;
+            --secondary: #0f172a;
+            --danger: #ef4444;
+            --accent: #38bdf8;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            margin: 0; background: var(--bg-gradient); color: var(--text-main); min-height: 100vh;
+        }
+
+        /* CONFIGURAÇÃO DO MODO CLIENTE */
+        body.view-mode .navbar, 
+        body.view-mode .admin-actions, 
+        body.view-mode #tab-historico,
+        body.view-mode .no-view-public { display: none !important; }
+        
+        .client-header { display: none; background: var(--secondary); padding: 1rem; color: white; text-align: center; }
+        body.view-mode .client-header { display: block; position: sticky; top: 0; z-index: 1001; }
+
+        /* NAVBAR ADMIN */
+        .navbar {
+            background: var(--secondary); padding: 1rem 2.5rem; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .nav-brand { color: white; font-weight: 800; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .nav-brand span { color: var(--primary); }
+        .nav-links { display: flex; gap: 12px; align-items: center; }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 18px; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; font-size: 13px;
+        }
+        .nav-btn.active { background: var(--primary); color: var(--secondary); border-color: var(--primary); }
+        
+        .btn-share-portal {
+            background: #25d366; color: white; border: none; padding: 10px 18px; border-radius: var(--radius-md);
+            font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;
+        }
+        .btn-share-portal:hover { background: #1da851; transform: translateY(-2px); }
+
+        /* PORTAL DE BUSCA */
+        .portal-cliente {
+            max-width: 500px; margin: 80px auto; text-align: center; padding: 40px;
+            background: var(--glass-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+        }
+        .search-large { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+        .search-large input { font-size: 28px; text-align: center; letter-spacing: 4px; font-weight: 800; border: 2px solid var(--primary); border-radius: var(--radius-md); padding: 15px; }
+        
+        .btn-main {
+            background: var(--primary); color: var(--secondary); border: none; padding: 18px; border-radius: var(--radius-md);
+            font-weight: 800; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+
+        /* FOLHA A4 */
+        .tab-content { display: none; padding: 30px 20px; }
+        .tab-content.active { display: block; }
+        .folha-a4 {
+            background: var(--glass-bg); max-width: 850px; margin: 0 auto; padding: 40px;
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid white;
+        }
+
+        .os-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--secondary); padding-bottom: 20px; margin-bottom: 30px; }
+        .logo-img { max-height: 80px; }
+        .os-title { margin: 0; color: var(--secondary); font-size: 28px; font-weight: 800; }
+        .os-number { background: var(--secondary); color: white; padding: 8px 15px; border-radius: 8px; font-size: 18px; margin-top: 10px; display: inline-block; }
+        .os-number input { background: transparent; border: none; color: var(--primary); font-weight: 800; width: 60px; font-size: 18px; outline: none; }
+
+        .section-header { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-light); letter-spacing: 1.2px; margin: 25px 0 15px 0; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .col-2 { grid-column: span 2; }
+        .col-4 { grid-column: span 4; }
+
+        input, textarea { background: #f8fafc; border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; font-size: 14px; width: 100%; }
+        input[readonly], textarea[readonly] { background: #fff; border-color: transparent; padding-left: 0; font-weight: 600; cursor: default; }
+
+        /* AÇÕES DO CLIENTE */
+        .client-actions { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+        .btn-client { padding: 12px 25px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        /* HISTÓRICO */
+        .history-card { background: white; border-radius: var(--radius-lg); overflow: hidden; max-width: 1000px; margin: 0 auto; box-shadow: var(--shadow-lg); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 12px; color: var(--text-light); text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .btn-action { border: none; background: none; cursor: pointer; font-size: 16px; padding: 5px 10px; }
+        .btn-edit { color: var(--accent); }
+        .btn-delete { color: var(--danger); }
+
+        /* BOTÕES ADMIN */
+        .actions { position: fixed; bottom: 30px; right: 30px; display: flex; gap: 10px; z-index: 1000; }
+        .btn-fab { padding: 15px 25px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; }
+
+        @media print {
+            .navbar, .actions, .no-print, .client-header, .client-actions, #tab-portal { display: none !important; }
+            body { background: white; }
+            .tab-content { display: block !important; padding: 0; }
+            .folha-a4 { box-shadow: none; border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body id="main-body">
+
+    <div class="client-header">
+        <i class="fas fa-microchip"></i> <strong>CENTROSUL</strong> | Consulta de Equipamento
+    </div>
+
+    <nav class="navbar no-print">
+        <div class="nav-brand" onclick="mudarAba('portal')">
+            <i class="fas fa-microchip"></i> CENTROSUL <span>GESTOR</span>
+        </div>
+        <div class="nav-links">
+            <button class="btn-share-portal" onclick="copiarLinkPortal()" title="Clique para copiar o link que você enviará ao cliente">
+                <i class="fab fa-whatsapp"></i> LINK DO PORTAL
+            </button>
+            <button id="btn-portal" class="nav-btn" onclick="mudarAba('portal')">Portal Cliente</button>
+            <button id="btn-nova-os" class="nav-btn active" onclick="mudarAba('nova-os')">Nova Ordem</button>
+            <button id="btn-historico" class="nav-btn" onclick="mudarAba('historico')">Histórico</button>
+        </div>
+    </nav>
+
+    <div id="tab-portal" class="tab-content">
+        <div class="portal-cliente">
+            <i class="fas fa-barcode" style="font-size: 50px; color: var(--primary); margin-bottom: 10px;"></i>
+            <h2>Consulta de Manutenção</h2>
+            <p>Insira o número da <b>OS</b> gravado no seu redutor para acessar o laudo técnico completo.</p>
+            <div class="search-large">
+                <input type="number" id="input_busca_cliente" placeholder="Ex: 001">
+                <button class="btn-main" onclick="buscarOSCliente()">
+                    <i class="fas fa-search"></i> CONSULTAR SERVIÇO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-nova-os" class="tab-content active">
+        <div class="folha-a4">
+            <div class="os-header">
+                <div>
+                    <img src="logo.png" alt="Centrosul" class="logo-img" onerror="this.src='https://via.placeholder.com/200x80?text=CENTROSUL'">
+                </div>
+                <div style="text-align: right;">
+                    <h1 class="os-title">Ordem de Serviço</h1>
+                    <div class="os-number">
+                        Nº <input type="number" id="os_num" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <form id="form-os">
+                <div class="section-header">Identificação do Cliente</div>
+                <div class="grid">
+                    <div class="field-group col-2"><label>Cliente</label><input type="text" id="cliente"></div>
+                    <div class="field-group col-2"><label>CNPJ / CPF</label><input type="text" id="cnpj"></div>
+                </div>
+
+                <div class="section-header">Dados do Equipamento</div>
+                <div class="grid">
+                    <div class="field-group col-2"><label>Equipamento</label><input type="text" id="equipamento"></div>
+                    <div class="field-group col-2"><label>Modelo / Série</label><input type="text" id="modelo"></div>
+                </div>
+
+                <div class="section-header">Laudo Técnico e Manutenção</div>
+                <div class="grid">
+                    <div class="col-4">
+                        <textarea id="servico" rows="10" placeholder="Descreva aqui o laudo..."></textarea>
+                    </div>
+                </div>
+
+                <div class="section-header">Datas</div>
+                <div class="grid">
+                    <div class="field-group col-2"><label>Entrada</label><input type="date" id="data_entrada"></div>
+                    <div class="field-group col-2"><label>Saída / Entrega</label><input type="date" id="data_saida"></div>
+                </div>
+            </form>
+
+            <div class="no-view-public" style="margin-top: 30px; display: flex; align-items: center; gap: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                <div id="qrcode"></div>
+                <div>
+                    <small style="color: var(--text-light)">QR Code de consulta rápida:</small><br>
+                    <strong>Aponte a câmera para acessar</strong>
+                </div>
+            </div>
+
+            <div class="client-actions no-print" id="acoes-cliente" style="display: none;">
+                <button class="btn-client" onclick="window.print()" style="background: var(--secondary); color: white;">
+                    <i class="fas fa-file-pdf"></i> Baixar Laudo (PDF)
+                </button>
+                <button class="btn-client" onclick="copiarLinkAcesso()" style="background: var(--primary); color: var(--secondary);">
+                    <i class="fas fa-link"></i> Copiar Link Direto
+                </button>
+            </div>
+        </div>
+        
+        <div class="actions admin-actions no-print">
+            <button class="btn-fab" onclick="salvarOS()" style="background: var(--primary); color: var(--secondary);"><i class="fas fa-save"></i> SALVAR OS</button>
+            <button class="btn-fab" onclick="window.print()" style="background: var(--secondary); color: white;"><i class="fas fa-print"></i> IMPRIMIR</button>
+        </div>
+    </div>
+
+    <div id="tab-historico" class="tab-content">
+        <div class="history-card">
+            <table>
+                <thead>
+                    <tr><th>Cód.</th><th>Cliente</th><th>Equipamento</th><th>Saída</th><th style="text-align: right;">Ações</th></tr>
+                </thead>
+                <tbody id="lista-os"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let dbOS = JSON.parse(localStorage.getItem('cs_db') || '[]');
+        let proxCodigo = parseInt(localStorage.getItem('cs_seq') || '1');
+
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if(params.has('p')) {
+                ativarModoCliente(params);
+            } else if(params.get('mode') === 'portal') {
+                mudarAba('portal');
+            } else {
+                limparFormulario();
+            }
+        };
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + aba).classList.add('active');
+            const btn = document.getElementById('btn-' + aba);
+            if(btn) btn.classList.add('active');
+            if(aba === 'historico') renderizarTabela();
+        }
+
+        function copiarLinkPortal() {
+            const linkPortal = window.location.origin + window.location.pathname + '?mode=portal';
+            navigator.clipboard.writeText(linkPortal);
+            alert("Link do Portal copiado! Envie este link para o cliente consultar a OS pelo código.");
+        }
+
+        function limparFormulario() {
+            document.getElementById('form-os').reset();
+            document.getElementById('os_num').value = proxCodigo;
+            document.getElementById('data_entrada').valueAsDate = new Date();
+            document.getElementById('qrcode').innerHTML = "";
+            document.querySelectorAll('input, textarea').forEach(el => el.readOnly = false);
+            document.getElementById('acoes-cliente').style.display = 'none';
+        }
+
+        function salvarOS() {
+            const num = parseInt(document.getElementById('os_num').value);
+            const os = {
+                id: num,
+                cliente: document.getElementById('cliente').value,
+                cnpj: document.getElementById('cnpj').value,
+                equipamento: document.getElementById('equipamento').value,
+                modelo: document.getElementById('modelo').value,
+                servico: document.getElementById('servico').value,
+                data_entrada: document.getElementById('data_entrada').value,
+                data_saida: document.getElementById('data_saida').value
+            };
+            if(!os.cliente) return alert("Nome do cliente é obrigatório!");
+
+            const index = dbOS.findIndex(x => x.id === num);
+            if(index !== -1) dbOS[index] = os; else dbOS.push(os);
+            if(num >= proxCodigo) proxCodigo = num + 1;
+
+            localStorage.setItem('cs_db', JSON.stringify(dbOS));
+            localStorage.setItem('cs_seq', proxCodigo);
+            gerarQRCode(os);
+            alert("Salvo com sucesso!");
+        }
+
+        function excluirOS(id) {
+            if(confirm("Excluir OS #" + id + "?")) {
+                dbOS = dbOS.filter(x => x.id !== id);
+                localStorage.setItem('cs_db', JSON.stringify(dbOS));
+                renderizarTabela();
+            }
+        }
+
+        function buscarOSCliente() {
+            const idBusca = document.getElementById('input_busca_cliente').value;
+            const os = dbOS.find(x => x.id == idBusca);
+            if(os) {
+                const url = gerarQRCode(os);
+                window.location.href = url;
+            } else {
+                alert("OS #" + idBusca + " não encontrada.");
+            }
+        }
+
+        function gerarQRCode(os) {
+            const container = document.getElementById("qrcode");
+            container.innerHTML = "";
+            const params = new URLSearchParams({
+                p: 1, i: os.id, c: os.cliente, cp: os.cnpj, e: os.equipamento, m: os.modelo, s: os.servico, de: os.data_entrada, ds: os.data_saida
+            });
+            const urlFinal = window.location.origin + window.location.pathname + '?' + params.toString();
+            new QRCode(container, { text: urlFinal, width: 120, height: 120 });
+            return urlFinal;
+        }
+
+        function ativarModoCliente(params) {
+            document.body.classList.add('view-mode');
+            mudarAba('nova-os');
+            document.getElementById('acoes-cliente').style.display = 'flex';
+            document.getElementById('os_num').value = params.get('i');
+            document.getElementById('cliente').value = params.get('c');
+            document.getElementById('cnpj').value = params.get('cp');
+            document.getElementById('equipamento').value = params.get('e');
+            document.getElementById('modelo').value = params.get('m');
+            document.getElementById('servico').value = params.get('s');
+            document.getElementById('data_entrada').value = params.get('de');
+            document.getElementById('data_saida').value = params.get('ds');
+            document.querySelectorAll('input, textarea').forEach(el => el.readOnly = true);
+        }
+
+        function copiarLinkAcesso() {
+            navigator.clipboard.writeText(window.location.href);
+            alert("Link da OS copiado!");
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('lista-os');
+            tbody.innerHTML = dbOS.slice().reverse().map(os => `
+                <tr>
+                    <td><strong>#${os.id}</strong></td>
+                    <td>${os.cliente}</td>
+                    <td>${os.equipamento}</td>
+                    <td>${os.data_saida}</td>
+                    <td style="text-align: right;">
+                        <button class="btn-action btn-edit" onclick="carregarOS(${os.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="excluirOS(${os.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function carregarOS(id) {
+            const os = dbOS.find(x => x.id === id);
+            if(!os) return;
+            document.getElementById('os_num').value = os.id;
+            document.getElementById('cliente').value = os.cliente;
+            document.getElementById('cnpj').value = os.cnpj;
+            document.getElementById('equipamento').value = os.equipamento;
+            document.getElementById('modelo').value = os.modelo;
+            document.getElementById('servico').value = os.servico;
+            document.getElementById('data_entrada').value = os.data_entrada;
+            document.getElementById('data_saida').value = os.data_saida;
+            gerarQRCode(os);
+            mudarAba('nova-os');
+        }
+    </script>
+</body>
+</html>
