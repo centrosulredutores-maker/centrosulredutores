@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centrosul | Gestão Cloud</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --primary: #00dc82; 
+            --secondary: #0f172a; 
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+            --glass-bg: rgba(255, 255, 255, 0.95); 
+            --radius-lg: 20px;
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { margin: 0; background: var(--bg-gradient); color: #1e293b; min-height: 100vh; }
+        
+        body.client-mode .admin-only, body.client-mode .navbar, body.client-mode .actions { display: none !important; }
+        .loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+
+        /* NAVBAR */
+        .navbar { background: var(--secondary); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .nav-brand { color: white; font-weight: 800; font-size: 1.2rem; }
+        .nav-brand span { color: var(--primary); }
+        .nav-btn { background: rgba(255,255,255,0.1); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-left: 5px; font-weight: 600; }
+        .nav-btn.active { background: var(--primary); color: var(--secondary); }
+
+        /* PORTAL */
+        .portal-container { max-width: 550px; margin: 100px auto; padding: 50px 30px; background: var(--glass-bg); border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); text-align: center; }
+        .input-adaptavel { min-width: 80px; max-width: 100%; font-size: 42px; font-weight: 800; text-align: center; border: none; border-bottom: 4px solid var(--primary); background: transparent; color: var(--secondary); padding: 10px; outline: none; letter-spacing: 2px; }
+
+        /* FOLHA A4 & BADGE OS */
+        .tab-content { display: none; padding: 20px; }
+        .tab-content.active { display: block; }
+        .folha-a4 { background: white; max-width: 800px; margin: 0 auto; padding: 40px; border-radius: 12px; box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        
+        /* CORREÇÃO DO QUADRADINHO DA OS */
+        .os-badge-container { 
+            background: var(--secondary); 
+            color: white; 
+            padding: 8px 15px; /* Reduzi um pouco o padding para ficar mais justo */
+            border-radius: 10px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            min-width: 80px; /* Largura mínima */
+        }
+        .os-badge-container span { margin-right: 5px; color: #94a3b8; font-size: 14px;}
+        
+        .input-os-num { 
+            background: transparent; 
+            border: none; 
+            color: var(--primary); 
+            font-weight: 800; 
+            font-size: 22px; 
+            outline: none; 
+            text-align: center;
+            padding: 0;
+            margin: 0;
+            width: 30px; /* Largura inicial pequena */
+        }
+        /* Remove setinhas do input number */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* HISTÓRICO */
+        .search-history-container { margin-bottom: 20px; display: flex; gap: 10px; }
+        .input-search-history { flex: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #e2e8f0; outline: none; font-size: 14px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .col-2 { grid-column: span 2; } .col-4 { grid-column: span 4; }
+        label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 5px; }
+        input, textarea { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; width: 100%; font-size: 14px; }
+        
+        .btn-principal { background: var(--primary); color: var(--secondary); border: none; padding: 15px 30px; border-radius: 50px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .actions { position: fixed; bottom: 30px; right: 30px; display: flex; gap: 10px; z-index: 900; }
+
+        @media print { .no-print, .actions, .navbar { display: none !important; } .folha-a4 { box-shadow: none; padding: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loading">
+        <i class="fas fa-circle-notch fa-spin" style="font-size: 40px; color: var(--primary)"></i>
+        <p id="loading-msg">Processando...</p>
+    </div>
+
+    <nav class="navbar no-print">
+        <div class="nav-brand">CENTROSUL <span>GESTOR</span></div>
+        <div class="nav-links">
+            <button class="nav-btn active" id="btn-nova" onclick="mudarAba('nova-os')">Nova OS</button>
+            <button class="nav-btn" id="btn-hist" onclick="carregarHistorico()">Histórico</button>
+            <button class="nav-btn" style="background:#25d366" onclick="copiarLinkPortal()">Link Cliente</button>
+        </div>
+    </nav>
+
+    <div id="tab-portal" class="tab-content">
+        <div class="portal-container">
+            <i class="fas fa-search-location" style="font-size: 40px; color: var(--primary); margin-bottom: 20px;"></i>
+            <h2>Consulta de Serviço</h2>
+            <p>Digite o código gravado no produto</p>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <input type="number" id="input_codigo_cliente" class="input-adaptavel" placeholder="000" oninput="ajustarLarguraPortal(this)">
+                <button class="btn-principal" onclick="consultarOSCloud()">BUSCAR LAUDO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-nova-os" class="tab-content active">
+        <div class="folha-a4">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 20px;">
+                <h1 style="margin:0; font-size: 1.4rem; color: var(--secondary)">ORDEM DE SERVIÇO</h1>
+                
+                <div class="os-badge-container" onclick="focarOS()">
+                    <span>Nº</span>
+                    <input type="number" id="os_num" class="input-os-num" value="1" oninput="ajustarLarguraOS(this)">
+                </div>
+            </div>
+
+            <form id="form-os">
+                <div class="grid">
+                    <div class="col-2"><label>Cliente</label><input type="text" id="cliente"></div>
+                    <div class="col-2"><label>CNPJ/CPF</label><input type="text" id="cnpj"></div>
+                    <div class="col-2"><label>Equipamento</label><input type="text" id="equipamento"></div>
+                    <div class="col-2"><label>Modelo / Série</label><input type="text" id="modelo"></div>
+                    <div class="col-4"><label>Relatório Técnico</label><textarea id="servico" rows="6"></textarea></div>
+                    <div class="col-2"><label>Data Entrada</label><input type="date" id="data_entrada"></div>
+                    <div class="col-2"><label>Previsão Entrega</label><input type="date" id="data_saida"></div>
+                </div>
+            </form>
+
+            <div class="admin-only" style="margin-top:20px; text-align:center;">
+                <div id="qrcode" style="display: inline-block; padding: 10px; border: 1px solid #f1f5f9; border-radius: 8px;"></div>
+            </div>
+
+            <div class="client-mode-only no-print" style="display:none; margin-top: 30px; justify-content: center; gap: 10px;">
+                <button class="btn-principal" onclick="window.print()"><i class="fas fa-print"></i> IMPRIMIR LAUDO</button>
+                <button class="btn-principal" style="background:#64748b; color:white;" onclick="location.reload()"><i class="fas fa-sync"></i> VOLTAR</button>
+            </div>
+        </div>
+
+        <div class="actions admin-only no-print">
+            <button class="btn-principal" onclick="salvarOSCloud()"><i class="fas fa-save"></i> SALVAR NA NUVEM</button>
+            <button class="btn-principal" style="background:var(--secondary); color:white" onclick="window.print()"><i class="fas fa-print"></i></button>
+        </div>
+    </div>
+
+    <div id="tab-historico" class="tab-content admin-only">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="search-history-container">
+                <input type="text" id="busca_historico" class="input-search-history" placeholder="Buscar por Cliente ou CNPJ..." oninput="filtrarHistorico()">
+                <button class="nav-btn" style="background:var(--secondary)" onclick="carregarHistorico()"><i class="fas fa-sync"></i></button>
+            </div>
+            <table style="width:100%; border-collapse: collapse; background:white; border-radius:10px; overflow:hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <thead style="background:#f1f5f9">
+                    <tr>
+                        <th style="padding:15px; text-align:left; font-size:12px; color:#64748b">OS</th>
+                        <th style="padding:15px; text-align:left; font-size:12px; color:#64748b">CLIENTE / CNPJ</th>
+                        <th style="padding:15px; text-align:center; font-size:12px; color:#64748b">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-os"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- SUBSTITUA PELAS SUAS CHAVES AQUI ---
+        const firebaseConfig = {
+           apiKey: "AIzaSyDmNk5ZmqHLYzaMHfJqfW-L9sLCZ9NQEGs",
+  authDomain: "centrosul-c0557.firebaseapp.com",
+  databaseURL: "https://centrosul-c0557-default-rtdb.firebaseio.com",
+  projectId: "centrosul-c0557",
+  storageBucket: "centrosul-c0557.firebasestorage.app",
+  messagingSenderId: "274146973507",
+  appId: "1:274146973507:web:24a8ea4cd4e7b374d4c1f6",
+          };
+        // ----------------------------------------
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- FUNÇÕES DE ADAPTAÇÃO VISUAL ---
+        
+        // Função exclusiva para o número da OS na folha A4 (quadradinho preto)
+        window.ajustarLarguraOS = (el) => {
+            // Calcula baseado em 'ch' (caracteres) + um respiro
+            const length = el.value.length;
+            // Se estiver vazio, assume 1, se não, usa o tamanho do texto * fator de largura
+            const width = length > 0 ? length : 1;
+            el.style.width = (width * 14) + "px"; // 14px por digito (aproximado para font bold)
+        };
+
+        // Função para o input gigante do portal
+        window.ajustarLarguraPortal = (el) => {
+            const length = el.value.length > 0 ? el.value.length : 3;
+            el.style.width = (length + 1) + "ch";
+        };
+
+        window.focarOS = () => document.getElementById('os_num').focus();
+
+        // --- LÓGICA DO SISTEMA ---
+
+        window.mudarAba = (aba) => {
+            document.querySelectorAll('.tab-content, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + aba).classList.add('active');
+            if(aba === 'nova-os') document.getElementById('btn-nova').classList.add('active');
+            if(aba === 'historico') document.getElementById('btn-hist').classList.add('active');
+        };
+
+        window.filtrarHistorico = () => {
+            const termo = document.getElementById('busca_historico').value.toLowerCase();
+            document.querySelectorAll('#lista-os tr').forEach(linha => {
+                linha.style.display = linha.innerText.toLowerCase().includes(termo) ? '' : 'none';
+            });
+        };
+
+        const toggleLoad = (show) => document.getElementById('loading').style.display = show ? 'flex' : 'none';
+
+        window.salvarOSCloud = async () => {
+            const id = document.getElementById('os_num').value;
+            if(!id) return alert("Defina o número da OS");
+            toggleLoad(true);
+            try {
+                const osData = {
+                    id,
+                    cliente: document.getElementById('cliente').value,
+                    cnpj: document.getElementById('cnpj').value,
+                    equipamento: document.getElementById('equipamento').value,
+                    modelo: document.getElementById('modelo').value,
+                    servico: document.getElementById('servico').value,
+                    data_entrada: document.getElementById('data_entrada').value,
+                    data_saida: document.getElementById('data_saida').value
+                };
+                await setDoc(doc(db, "os", id), osData);
+                gerarQRCode(id);
+                alert("OS Salva com Sucesso!");
+            } catch (e) { alert("Erro: " + e.message); }
+            toggleLoad(false);
+        };
+
+        window.consultarOSCloud = async () => {
+            const id = document.getElementById('input_codigo_cliente').value;
+            if(!id) return;
+            toggleLoad(true);
+            try {
+                const docSnap = await getDoc(doc(db, "os", id));
+                if (docSnap.exists()) {
+                    const d = docSnap.data();
+                    
+                    // PREENCHE OS DADOS
+                    const campoOS = document.getElementById('os_num');
+                    campoOS.value = d.id;
+                    
+                    // *** O PULO DO GATO: FORÇA O AJUSTE VISUAL AGORA ***
+                    ajustarLarguraOS(campoOS); 
+                    
+                    document.getElementById('cliente').value = d.cliente;
+                    document.getElementById('cnpj').value = d.cnpj;
+                    document.getElementById('equipamento').value = d.equipamento;
+                    document.getElementById('modelo').value = d.modelo;
+                    document.getElementById('servico').value = d.servico;
+                    document.getElementById('data_entrada').value = d.data_entrada;
+                    document.getElementById('data_saida').value = d.data_saida;
+                    
+                    const params = new URLSearchParams(window.location.search);
+                    if(params.get('mode') === 'client') {
+                        document.querySelectorAll('input, textarea').forEach(i => i.readOnly = true);
+                        document.querySelector('.client-mode-only').style.display = 'flex';
+                    }
+                    mudarAba('nova-os');
+                } else { alert("OS não encontrada!"); }
+            } catch (e) { alert("Erro na conexão: " + e.message); }
+            toggleLoad(false);
+        };
+
+        window.carregarHistorico = async () => {
+            toggleLoad(true);
+            mudarAba('historico');
+            const lista = document.getElementById('lista-os');
+            lista.innerHTML = "";
+            try {
+                const snaps = await getDocs(collection(db, "os"));
+                snaps.forEach(d => {
+                    const os = d.data();
+                    lista.innerHTML += `
+                    <tr style="border-bottom: 1px solid #f1f5f9">
+                        <td style="padding:15px; font-weight:800; color:var(--secondary)">#${os.id}</td>
+                        <td style="padding:15px; font-size:13px">
+                            <strong>${os.cliente || 'N/A'}</strong><br>
+                            <span style="color:#64748b">${os.cnpj || ''}</span>
+                        </td>
+                        <td style="text-align:center">
+                            <button onclick="abrirOS('${os.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:18px;"><i class="fas fa-eye"></i></button>
+                            <button onclick="deletarOS('${os.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:18px; margin-left:10px;"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            } catch (e) { console.error(e); }
+            toggleLoad(false);
+        };
+
+        window.abrirOS = (id) => {
+            document.getElementById('input_codigo_cliente').value = id;
+            window.consultarOSCloud();
+        };
+
+        window.deletarOS = async (id) => {
+            if(!confirm("Apagar OS " + id + "?")) return;
+            await deleteDoc(doc(db, "os", id));
+            carregarHistorico();
+        };
+
+        window.copiarLinkPortal = () => {
+            const link = window.location.origin + window.location.pathname + "?mode=client";
+            navigator.clipboard.writeText(link);
+            alert("Link copiado!");
+        };
+
+        function gerarQRCode(id) {
+            document.getElementById("qrcode").innerHTML = "";
+            const link = window.location.origin + window.location.pathname + "?mode=client&id=" + id;
+            new QRCode(document.getElementById("qrcode"), { text: link, width: 120, height: 120 });
+        }
+
+        window.onload = () => {
+            // Ajusta o tamanho da OS inicial
+            ajustarLarguraOS(document.getElementById('os_num'));
+            
+            const params = new URLSearchParams(window.location.search);
+            if(params.get('mode') === 'client') {
+                document.body.classList.add('client-mode');
+                if(params.has('id')) {
+                    document.getElementById('input_codigo_cliente').value = params.get('id');
+                    window.consultarOSCloud();
+                } else { mudarAba('portal'); }
+            }
+        };
+    </script>
+</body>
+</html>
